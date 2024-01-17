@@ -6,6 +6,9 @@ from tkinter import messagebox
 from tkinter import ttk
 
 fUsers = "files/users.txt"
+fWaitingUsers = "files\waitingUsers.txt"
+fCategories = "files\categories.txt"
+fNotifications = "files\notifications.txt"
 
 window = Tk()
 screenWidth = window.winfo_screenwidth()
@@ -91,99 +94,169 @@ def approvingUsersPanel():
     panelApprovingUsers = PanedWindow(window, width=750, height=450, relief = "sunken")
     panelApprovingUsers.place(x=250, y=50)
 
-    fWaitingUsers = "files\waitingUsers.txt"
+    treeviewPanel = PanedWindow(panelApprovingUsers, width = 720, height = 150, bd = "3", relief = "sunken")
+    treeviewPanel.place(x=175, y=10)
 
-    """with open(fWaitingUsers, "r") as file:
-        waitingUsers = file.readlines()
+    def readUsersToTreeview(treeview):
+        with open(fWaitingUsers, "r", encoding="utf-8") as file:
+            waiting_users_list = file.readlines()
 
-    initialX = 280
-    initialY = 50
+        treeview.delete(*treeview.get_children())
 
-    if not waitingUsers:
-        labelNoWaitingUsers = Label(panelApprovingUsers, text="No Waiting Users", font=("Helvetica", 12), bg="#3498db", fg="white")
-        labelNoWaitingUsers.place()
-    else:
-        for waitingUser in waitingUsers:
-            waitingUserLabel = Label(panelApprovingUsers, text="Waiting User:", font=("Helvtica", 12), bg="#3498db", fg="white")
-            waitingUserLabel.place(x=initialX, y=initialY)
+        for line in waiting_users_list:
+            username, password = line.strip().split(";")
+            treeview.insert("", "end", values=(username, password))
 
-            btn_aprovar = Button(panelApprovingUsers, text="Aprovar", command=lambda u=waitingUser: aprovar_utilizador(u), bg="#2ecc71", fg="white", font=("Helvetica", 12), padx=5)
-            btn_aprovar.place(x=int(initialX), y=int(initialY+30))
+    def approveUser():
+        selected_item = treeview.selection()
+        if not selected_item:
+            messagebox.showinfo("Approve User", "Please select a user to approve.")
+            return
 
-            btn_rejeitar = Button(panelApprovingUsers, text="Rejeitar", command=lambda u=waitingUser: rejeitar_utilizador(u), bg="#e74c3c", fg="white", font=("Helvetica", 12), padx=5)
-            btn_rejeitar.place(x=int(initialX+30), y=int(initialY+30))"""
+        username, password = treeview.item(selected_item, "values")
+
+        with open(fUsers, "a", encoding="utf-8") as users_file:
+            users_file.write(f"{username};{password}\n")
+
+        with open(fWaitingUsers, "r", encoding="utf-8") as waiting_file:
+            waiting_users_list = waiting_file.readlines()
+
+        with open(fWaitingUsers, "w", encoding="utf-8") as waiting_file:
+            for line in waiting_users_list:
+                if line.strip().split(";")[0] != username:
+                    waiting_file.write(line)
+
+        readUsersToTreeview(treeview)
+        messagebox.showinfo("Approve User", f"The user {username} has been approved.")
+
+    def removeUser():
+        selected_item = treeview.selection()
+        if not selected_item:
+            messagebox.showinfo("Remove User", "Please select a user to remove.")
+            return
+
+        username = treeview.item(selected_item, "values")[0]
+
+        with open(fWaitingUsers, "r", encoding="utf-8") as file:
+            waiting_users_list = file.readlines()
+
+        with open(fWaitingUsers, "w", encoding="utf-8") as file:
+            for line in waiting_users_list:
+                if line.strip().split(";")[0] != username:
+                    file.write(line)
+
+        readUsersToTreeview(treeview)
+        messagebox.showinfo("Remove User", f"The user {username} has been removed.")
+
+    treeview = ttk.Treeview(treeviewPanel, columns=("Username", "Password"), show="headings")
+    treeview.heading("Username", text="Username")
+    treeview.heading("Password", text="Password")
+
+    vsb = ttk.Scrollbar(treeviewPanel, orient="vertical", command=treeview.yview)
+    treeview.configure(yscrollcommand=vsb.set)
+
+    hsb = ttk.Scrollbar(treeviewPanel, orient="horizontal", command=treeview.xview)
+    treeview.configure(xscrollcommand=hsb.set)
+
+    treeview.grid(column=0, row=0, sticky="nsew")
+    vsb.grid(column=1, row=0, sticky="ns")
+    hsb.grid(column=0, row=1, sticky="ew")
+
+    treeviewPanel.columnconfigure(0, weight=1)
+    treeviewPanel.rowconfigure(0, weight=1)
+
+    btnRemoveUser = Button(panelApprovingUsers, text="Remove User", width=12, height=4, fg="black", command=removeUser)
+    btnRemoveUser.place(x=450, y=304)
+
+    btnApproveUser = Button(panelApprovingUsers, text="Approve User", width=12, height=4, fg="black", command=approveUser)
+    btnApproveUser.place(x=210, y=304)
+
+    readUsersToTreeview(treeview)
 
 # Categories Panel
 def categorySettingsPanel():
-
-    fCategories = "files\categories.txt"
-    
-    categoryPanel = PanedWindow(window, width=750, height=450, relief = "sunken")
+    categoryPanel = PanedWindow(window, width=750, height=450, relief="sunken")
     categoryPanel.place(x=250, y=50)
 
     def addCategory():
         new_category = category.get()
         with open(fCategories, "a", encoding="utf-8") as file:
             file.write(new_category + "\n")
-        lboxCategories.insert("end", new_category)
+        tViewCategories.insert("", "end", values=(new_category,))
         category.set("")
-    
-    def saveCategoriesToFile():
-        categories = lboxCategories.get(0, "end")
-        categories = [category for category in categories if category]
-        with open(fCategories, "w", encoding="utf-8") as file:
-            file.write("\n".join(categories))
 
     def removeCategory():
-        selectedIndex = lboxCategories.curselection()
+        selected_item = tViewCategories.selection()
+        if not selected_item:
+            messagebox.showinfo("Remove Category", "Please select a category to remove.")
+            return
 
-        if selectedIndex:
-            selectedCategory = lboxCategories.get(selectedIndex)
-            lboxCategories.delete(selectedIndex)
+        category = tViewCategories.item(selected_item, "values")[0]
 
-            with open(fCategories, "r", encoding="utf-8") as file:
-                categoriesList = file.readlines()
+        with open(fCategories, "r", encoding="utf-8") as file:
+            categoriesList = file.readlines()
 
-            with open(fCategories, "w", encoding="utf-8") as file:
-                for line in categoriesList:
-                    if line.strip() != selectedCategory:
-                        file.write(line)
+        with open(fCategories, "w", encoding="utf-8") as file:
+            for line in categoriesList:
+                if line.strip().split(";")[0] != category:
+                    file.write(line)
 
-    # Category ListBox Panel
-    listBoxPanel = PanedWindow(categoryPanel, width = 250, height = 300, bd = "3", relief = "sunken")
-    listBoxPanel.place(x=20, y=75)
+        refreshCategoriesView()
 
-    # Category ListBox
-    lboxCategories=Listbox(listBoxPanel, width = 35, height=15, bd="3", selectmode = "single", selectbackground="blue")
-    lboxCategories.place(x=13, y= 25)
+        messagebox.showinfo("Remove User", f"The category {category} has been removed.")
+    
+    def refreshCategoriesView():
+        with open(fCategories, "r", encoding="utf-8") as file:
+            categories_list = [category.strip() for category in file.readlines()]
+
+        tViewCategories.delete(*tViewCategories.get_children())
+        for category in categories_list:
+            tViewCategories.insert("", "end", values=(category,))
+
+    # Category Treeview Panel
+    treeViewPanel = PanedWindow(categoryPanel, width=250, height=300, bd="3", relief="sunken")
+    treeViewPanel.place(x=20, y=75)
+
+    # Category Treeview
+    tViewCategories = ttk.Treeview(treeViewPanel, columns=("Categories",), show="headings")
+    tViewCategories.heading("Categories", text="Categories")
+
+    vsb = ttk.Scrollbar(treeViewPanel, orient="vertical", command=tViewCategories.yview)
+    tViewCategories.configure(yscrollcommand=vsb.set)
+
+    tViewCategories.grid(column=0, row=0, sticky="nsew")
+    vsb.grid(column=1, row=0, sticky="ns")
+
+    treeViewPanel.columnconfigure(0, weight=1)
+    treeViewPanel.rowconfigure(0, weight=1)
 
     # Add Category Panel
-    inputCategoryPanel = PanedWindow(categoryPanel, width = 350, height = 100, bd = "3", relief = "sunken")
+    inputCategoryPanel = PanedWindow(categoryPanel, width=350, height=100, bd="3", relief="sunken")
     inputCategoryPanel.place(x=300, y=75)
+
     # Label
-    lblCategory=Label(inputCategoryPanel, text="Category:", fg="blue", font=("Helvetica", 9))
+    lblCategory = Label(inputCategoryPanel, text="Category:", fg="blue", font=("Helvetica", 9))
     lblCategory.place(x=20, y=30)
+
     # Entry
     category = StringVar()
-    txtCategory = Entry(inputCategoryPanel, width = 35, textvariable = category)
+    txtCategory = Entry(inputCategoryPanel, width=35, textvariable=category)
     txtCategory.place(x=80, y=30)
 
-    #Buttons
-    btnAdd = Button(categoryPanel, text="Add", width=12, height=4, fg="black", command = addCategory)
+    # Buttons
+    btnAdd = Button(categoryPanel, text="Add", width=12, height=4, fg="black", command=addCategory)
     btnAdd.place(x=300, y=304)
 
-    btnRemove = Button(categoryPanel, text="Remove", width=12, height=4, fg="black", command = removeCategory)
+    btnRemove = Button(categoryPanel, text="Remove", width=12, height=4, fg="black", command=removeCategory)
     btnRemove.place(x=423, y=304)
 
-    btnSaveCategories = Button(categoryPanel, text="Save Categories", width=12, height=4, command = saveCategoriesToFile)
-    btnSaveCategories.place(x=545, y=304)
-
-    # Reads the existing categories on the file
+    # Reads the existing categories from the file
     fileCategories = open(fCategories, "r", encoding="utf-8")
     categoriesList = fileCategories.readlines()
     fileCategories.close()
+
     for line in categoriesList:
-        lboxCategories.insert("end", line)
+        tViewCategories.insert("", "end", values=(line.strip(),))
 
 def notificationSettingsPanel():
 
@@ -261,8 +334,6 @@ def checkUser(userName, userPass, panelUsers):
 
 # Working
 def createAccount(userName, userPass, userPassConfirm, panelUsers):
-
-    fWaitingUsers = "files\waitingUsers.txt"
 
     if userPass != userPassConfirm:
         messagebox.showerror("Create Account Error", "Your passwords are different!")
