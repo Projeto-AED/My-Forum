@@ -5,6 +5,4 @@
 6;1000
 teste;teste
 a;a
-b;b
 c;c
-d;d

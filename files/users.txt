@@ -1,3 +1,7 @@
 admin;admin
 mario;mario
 4;4
+teste123;palavrapassesupersecreta
+d;d
+user;user
+aaa;aaa

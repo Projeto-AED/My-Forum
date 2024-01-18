@@ -122,7 +122,7 @@ def userDashboard(userName):
     imageViewNotifs = Image.open("images\\viewNotifsIMG.png")
     resizedViewNotifsIMG = imageViewNotifs.resize((50, 50))
     imgViewNotifs = ImageTk.PhotoImage(resizedViewNotifsIMG)
-    btnViewNotifs = Button(userMenu, image=imgViewNotifs, width = 230 , height = 50, relief="sunken", compound=LEFT, text="Notifications", font="Calibri, 11")
+    btnViewNotifs = Button(userMenu, image=imgViewNotifs, width = 230 , height = 50, relief="sunken", compound=LEFT, text="Notifications", font="Calibri, 11", command = userNotificationsPanel)
     btnViewNotifs.image = imgViewNotifs
     btnViewNotifs.place(x=5, y=340)
 
@@ -440,6 +440,90 @@ def notificationSettingsPanel():
     btnRemoveNotification.place(x=555, y=280)
 
     readNotificationsToTreeview(treeviewNotifications)
+
+def userNotificationsPanel():
+    panelUserNotifs = PanedWindow(window, width=750, height=450, relief="sunken")
+    panelUserNotifs.place(x=250, y=50)
+
+    notifTreeviewPanel = PanedWindow(panelUserNotifs, width=730, height=350, bd="3", relief="sunken")
+    notifTreeviewPanel.place(x=10, y=10)
+
+    def readNotificationsToTreeview(treeview):
+        notifications_file_path = "files\\notifications.txt"
+
+        with open(notifications_file_path, "r", encoding="utf-8") as file:
+            notifications_list = file.readlines()
+
+        treeview.delete(*treeview.get_children())
+
+        for line in notifications_list:
+            title, text = line.strip().split(";")
+            treeview.insert("", "end", values=(title, text))
+
+    def onTreeviewSelect(event):
+        selected_item = treeviewNotifications.selection()
+        if not selected_item:
+            return
+
+        item_values = treeviewNotifications.item(selected_item, "values")
+        if item_values:
+            title, notification = item_values
+            lblSelectedTitle.config(text=f"Title: {title}")
+            lblSelectedNotification.config(text=f"Notification: {notification}")
+
+    treeviewNotifications = ttk.Treeview(notifTreeviewPanel, columns=("Title", "Notification"), show="headings", height=8)
+    treeviewNotifications.heading("Title", text="Title")
+    treeviewNotifications.heading("Notification", text="Notification")
+
+    treeviewNotifications.column("Title", width=150)
+    treeviewNotifications.column("Notification", width=550)
+
+    vsbNotifications = ttk.Scrollbar(notifTreeviewPanel, orient="vertical", command=treeviewNotifications.yview)
+    treeviewNotifications.configure(yscrollcommand=vsbNotifications.set)
+
+    hsbNotifications = ttk.Scrollbar(notifTreeviewPanel, orient="horizontal", command=treeviewNotifications.xview)
+    treeviewNotifications.configure(xscrollcommand=hsbNotifications.set)
+
+    treeviewNotifications.grid(column=0, row=0, sticky="nsew")
+    vsbNotifications.grid(column=1, row=0, sticky="ns")
+    hsbNotifications.grid(column=0, row=1, sticky="ew")
+
+    notifTreeviewPanel.columnconfigure(0, weight=1)
+    notifTreeviewPanel.rowconfigure(0, weight=1)
+
+    readNotificationsToTreeview(treeviewNotifications)
+
+    notificationDetailsPanel = PanedWindow(panelUserNotifs, width=730, height=120, bd="3", relief="sunken")
+    notificationDetailsPanel.place(x=10, y=240)
+
+    lblSelectedTitle = Label(notificationDetailsPanel, text="Title:", fg="blue", font=("Helvetica", 9), wraplength=180, justify="left")
+    lblSelectedTitle.place(x=20, y=10)
+
+    lblSelectedNotification = Label(notificationDetailsPanel, text="Notification:", fg="blue", font=("Helvetica", 9), wraplength=500, justify="left")
+    lblSelectedNotification.place(x=20, y=40)
+
+    btnForward = Button(panelUserNotifs, text="Next\nNotification", width=15, height=4, command=lambda: moveNotification(treeviewNotifications, 1))
+    btnForward.place(x=620, y=365)
+
+    btnBackward = Button(panelUserNotifs, text="Previous\nNotification", width=15, height=4, command=lambda: moveNotification(treeviewNotifications, -1))
+    btnBackward.place(x=480, y=365)
+
+    treeviewNotifications.bind("<<TreeviewSelect>>", onTreeviewSelect)
+
+    def moveNotification(treeview, direction):
+        selected_item = treeview.selection()
+        if not selected_item:
+            messagebox.showinfo("Move Notification", "Please select a notification.")
+            return
+
+        current_index = treeview.index(selected_item)
+        total_items = len(treeview.get_children())
+
+        new_index = (current_index + direction) % total_items
+
+        treeview.selection_set(treeview.get_children()[new_index])
+        treeview.focus(treeview.get_children()[new_index])
+        treeview.see(treeview.get_children()[new_index])
 
 # Registration Page
 def registerPanel():
