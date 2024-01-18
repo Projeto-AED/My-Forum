@@ -4,6 +4,7 @@ from tkinter import filedialog
 from PIL import ImageTk,Image
 from tkinter import messagebox
 from tkinter import ttk
+import os
 
 fUsers = "files/users.txt"
 fWaitingUsers = "files\waitingUsers.txt"
@@ -230,7 +231,7 @@ def categorySettingsPanel():
     treeViewPanel.columnconfigure(0, weight=1)
     treeViewPanel.rowconfigure(0, weight=1)
 
-    # Add Category Panel
+    # Category Panel
     inputCategoryPanel = PanedWindow(categoryPanel, width=350, height=100, bd="3", relief="sunken")
     inputCategoryPanel.place(x=300, y=75)
 
@@ -258,12 +259,145 @@ def categorySettingsPanel():
     for line in categoriesList:
         tViewCategories.insert("", "end", values=(line.strip(),))
 
-def notificationSettingsPanel():
+def notificationSettingsPanel():    
+    notificationAdminPanel = PanedWindow(window, width=750, height=450, relief = "sunken")
+    notificationAdminPanel.place(x=250, y=50)
 
-    fNotifications = "files\notifications.txt"
-    
-    categoryPanel = PanedWindow(window, width=750, height=450, relief = "sunken")
-    categoryPanel.place(x=250, y=50)
+    def sendNotification(title, text):
+        notifications_file_path = "files\\notifications.txt"
+
+        if title and text:
+            with open(notifications_file_path, "a", encoding="utf-8") as notifications_file:
+                notifications_file.write(f"{title};{text}\n")
+            messagebox.showinfo("Send Notification", "Notification sent successfully!")
+
+            readNotificationsToTreeview(treeviewNotifications)
+        else:
+            messagebox.showerror("Send Notification", "Title and Text cannot be empty!")
+
+    def clearBoxes():
+        notifTitle.set("")
+        notifText.delete("1.0", "end")
+
+    def editNotification():
+        selected_item = treeviewNotifications.selection()
+        if not selected_item:
+            messagebox.showinfo("Edit Notification", "Please select a notification to edit.")
+            return
+
+        title, _ = treeviewNotifications.item(selected_item, "values")
+        updated_title = notifTitle.get()
+        updated_notification = notifText.get("1.0", "end-1c")
+
+        notifications_file_path = os.path.join("files", "notifications.txt")
+
+        with open(notifications_file_path, "r", encoding="utf-8") as file:
+            notifications_list = file.readlines()
+
+        with open(notifications_file_path, "w", encoding="utf-8") as file:
+            for line in notifications_list:
+                if line.strip().split(";")[0] != title:
+                    file.write(line)
+            file.write(f"{updated_title};{updated_notification}\n")
+
+        readNotificationsToTreeview(treeviewNotifications)
+        messagebox.showinfo("Edit Notification", "Notification edited successfully.")
+
+    # Send Notifications Panel
+    inputNotificationsPanel = PanedWindow(notificationAdminPanel, width=730, height=200, bd="3", relief="sunken")
+    inputNotificationsPanel.place(x=10, y=10)
+
+    lblNotifTitle = Label(inputNotificationsPanel, text="Title:", fg="blue", font=("Helvetica", 9))
+    lblNotifTitle.place(x=20, y=10)
+
+    notifTitle = StringVar()
+    txtNotifTitle = Entry(inputNotificationsPanel, width=35, textvariable=notifTitle)
+    txtNotifTitle.place(x=80, y=10)
+
+    # Long Text Input Box
+    lblNotifText = Label(inputNotificationsPanel, text="Notification Text:", fg="blue", font=("Helvetica", 9))
+    lblNotifText.place(x=20, y=40)
+
+    notifText = Text(inputNotificationsPanel, width=50, height=7)
+    notifText.place(x=20, y=70)
+
+    btnClearBoxes = Button(inputNotificationsPanel, text="Clear Boxes", width=12, height=2, fg="black", command=clearBoxes)
+    btnClearBoxes.place(x=550, y=20)
+
+    btnEditNotification = Button(inputNotificationsPanel, text="Edit\nNotification", width=12, height=2, fg="black", command = editNotification)
+    btnEditNotification.place(x=550, y=70)
+
+    btnSendNotification = Button(inputNotificationsPanel, text="Send\nNotification", width=12, height=2, fg="black", command=lambda: sendNotification(notifTitle.get(), notifText.get("1.0", "end-1c")))
+    btnSendNotification.place(x=550, y=120)
+
+    # Manage Already Existing Notifications
+    def readNotificationsToTreeview(treeview):
+        notifications_file_path = "files\\notifications.txt"
+
+        with open(notifications_file_path, "r", encoding="utf-8") as file:
+            notifications_list = file.readlines()
+
+        treeview.delete(*treeview.get_children())
+
+        for line in notifications_list:
+            title, text = line.strip().split(";")
+            treeview.insert("", "end", values=(title, text))
+
+    def removeNotification(treeview):
+        selected_item = treeview.selection()
+        if not selected_item:
+            messagebox.showinfo("Remove Notification", "Please select a notification to remove.")
+            return
+
+        title, notification = treeview.item(selected_item, "values")
+
+        notifications_file_path = os.path.join("files", "notifications.txt")
+
+        with open(notifications_file_path, "r", encoding="utf-8") as file:
+            notifications_list = file.readlines()
+
+        with open(notifications_file_path, "w", encoding="utf-8") as file:
+            for line in notifications_list:
+                if line.strip().split(";")[0] != title:
+                    file.write(line)
+
+        readNotificationsToTreeview(treeview)
+        messagebox.showinfo("Remove Notification", f"The notification with title '{title}' has been removed.")
+
+    manageNotificationsPanel = PanedWindow(notificationAdminPanel, width=730, height=180, bd="3", relief="sunken")
+    manageNotificationsPanel.place(x=10, y=220)
+
+    treeviewNotifications = ttk.Treeview(manageNotificationsPanel, columns=("Title", "Notification"), show="headings", height=8)
+    treeviewNotifications.heading("Title", text="Title")
+    treeviewNotifications.heading("Notification", text="Notification")
+
+    vsbNotifications = ttk.Scrollbar(manageNotificationsPanel, orient="vertical", command=treeviewNotifications.yview)
+    treeviewNotifications.configure(yscrollcommand=vsbNotifications.set)
+
+    hsbNotifications = ttk.Scrollbar(manageNotificationsPanel, orient="horizontal", command=treeviewNotifications.xview)
+    treeviewNotifications.configure(xscrollcommand=hsbNotifications.set)
+
+    treeviewNotifications.grid(column=0, row=0, sticky="nsew")
+    vsbNotifications.grid(column=1, row=0, sticky="ns")
+    hsbNotifications.grid(column=0, row=1, sticky="ew")
+
+    manageNotificationsPanel.columnconfigure(0, weight=1)
+    manageNotificationsPanel.rowconfigure(0, weight=1)
+
+    def onTreeviewSelect(event):
+        selected_item = treeviewNotifications.selection()
+        if selected_item:
+            title, notification = treeviewNotifications.item(selected_item, "values")
+            notifTitle.set(title)
+            notifText.delete("1.0", "end")
+            notifText.insert("1.0", notification)
+
+    treeviewNotifications.bind("<<TreeviewSelect>>", onTreeviewSelect)
+
+    btnRemoveNotification = Button(notificationAdminPanel, text="Remove\nNotification", width=12, height=4, fg="black", command=lambda: removeNotification(treeviewNotifications))
+    btnRemoveNotification.place(x=555, y=280)
+
+    readNotificationsToTreeview(treeviewNotifications)
 
 # Registration Page
 def registerPanel():
@@ -326,6 +460,7 @@ def checkUser(userName, userPass, panelUsers):
             if line.strip() == f"{userName};{userPass}":
                 msg = "Welcome " + userName
                 messagebox.showinfo("Login", msg)
+                panelUsers.destroy()
                 # has userName as input because it'll be needed to identify the User throughout posts and such.
                 userDashboard(userName)
                 return msg
