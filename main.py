@@ -90,6 +90,48 @@ def adminDashboard():
 def userDashboard(userName):
     userMenu = PanedWindow(window, bg="#3c72c2", width=250, height=500)
     userMenu.place(x=0, y=0)
+    
+    imageProfileStats = Image.open("images\\registerIMG.png")
+    resizedProfileStatsIMG = imageProfileStats.resize((50, 50))
+    imgProfileStats = ImageTk.PhotoImage(resizedProfileStatsIMG)
+    btnProfileStats = Button(userMenu, image=imgProfileStats, width = 230 , height = 50, relief="sunken", compound=LEFT, text = (userName)+"'s Statistics", font="Calibri, 11")
+    btnProfileStats.image = imgProfileStats
+    btnProfileStats.place(x=5, y=20)
+
+    imageNewPost = Image.open("images\\postIMG.png")
+    resizedNewPostIMG = imageNewPost.resize((50, 50))
+    imgNewPost = ImageTk.PhotoImage(resizedNewPostIMG)
+    btnNewPost = Button(userMenu, image=imgNewPost, width = 230 , height = 50, relief="sunken", compound=LEFT, text="New Post", font="Calibri, 11")
+    btnNewPost.image = imgNewPost
+    btnNewPost.place(x=5, y=100)
+
+    imageViewPosts = Image.open("images\\viewPostsIMG.png")
+    resizedViewPostsIMG = imageViewPosts.resize((50, 50))
+    imgViewPosts = ImageTk.PhotoImage(resizedViewPostsIMG)
+    btnViewPosts = Button(userMenu, image=imgViewPosts, width = 230 , height = 50, relief="sunken", compound=LEFT, text="View Posts", font="Calibri, 11")
+    btnViewPosts.image = imgViewPosts
+    btnViewPosts.place(x=5, y=180)
+
+    imageLikedPosts = Image.open("images\\likedPostsIMG.png")
+    resizedLikedPostsIMG = imageLikedPosts.resize((50, 50))
+    imgLikedPosts = ImageTk.PhotoImage(resizedLikedPostsIMG)
+    btnLikedPosts = Button(userMenu, image=imgLikedPosts, width = 230 , height = 50, relief="sunken", compound=LEFT, text="Liked Posts", font="Calibri, 11")
+    btnLikedPosts.image = imgLikedPosts
+    btnLikedPosts.place(x=5, y=260)
+
+    imageViewNotifs = Image.open("images\\viewNotifsIMG.png")
+    resizedViewNotifsIMG = imageViewNotifs.resize((50, 50))
+    imgViewNotifs = ImageTk.PhotoImage(resizedViewNotifsIMG)
+    btnViewNotifs = Button(userMenu, image=imgViewNotifs, width = 230 , height = 50, relief="sunken", compound=LEFT, text="Notifications", font="Calibri, 11")
+    btnViewNotifs.image = imgViewNotifs
+    btnViewNotifs.place(x=5, y=340)
+
+    imageLeave = Image.open("images\\removeUserIMG.png")
+    resizedLeaveIMG = imageLeave.resize((50, 50))
+    imgLeave = ImageTk.PhotoImage(resizedLeaveIMG)
+    btnLeave = Button(userMenu, image=imgLeave, width = 230 , height = 50,text="Leave App", relief="sunken", compound=LEFT, font="Calibri, 11", command=window.destroy)
+    btnLeave.image = imgLeave
+    btnLeave.place(x=5, y=420)
 
 def approvingUsersPanel():
     panelApprovingUsers = PanedWindow(window, width=750, height=450, relief = "sunken")
