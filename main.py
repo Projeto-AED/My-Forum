@@ -11,6 +11,8 @@ fWaitingUsers = "files/waitingUsers.txt"
 fCategories = "files/categories.txt"
 fNotifications = "files/notifications.txt"
 fPosts = "files/posts.txt"
+fLikedPosts = "files/likedPosts.txt"
+fComments = "files/comments.txt"
 
 window = Tk()
 screenWidth = window.winfo_screenwidth()
@@ -20,7 +22,7 @@ window.title('my Forum')
 
 # Main Page (With Image, Login, Registration and Leave Buttons)
 def indexPage():
-    # Action Window, where the User inputs performs Actions
+    # Action Window, where the User performs Actions
     actionWindow = PanedWindow(window, width=750, height=450)
     actionWindow.place(x=250, y=50)
 
@@ -109,7 +111,7 @@ def userDashboard(userName):
     imageViewPosts = Image.open("images\\viewPostsIMG.png")
     resizedViewPostsIMG = imageViewPosts.resize((50, 50))
     imgViewPosts = ImageTk.PhotoImage(resizedViewPostsIMG)
-    btnViewPosts = Button(userMenu, image=imgViewPosts, width = 230 , height = 50, relief="sunken", compound=LEFT, text="View Posts", font="Calibri, 11")
+    btnViewPosts = Button(userMenu, image=imgViewPosts, width = 230 , height = 50, relief="sunken", compound=LEFT, text="View Posts", font="Calibri, 11", command = lambda: viewPostsPanel(userName))
     btnViewPosts.image = imgViewPosts
     btnViewPosts.place(x=5, y=180)
 
@@ -647,6 +649,86 @@ def newPostPanel(userName):
     treeviewPosts.bind("<<TreeviewSelect>>", onTreeviewSelect)
 
     updateTreeView()
+
+def viewPostsPanel(userName):
+    panelViewPosts = PanedWindow(window, width=750, height=450, relief="sunken")
+    panelViewPosts.place(x=250, y=50)
+
+    def readPosts():
+        with open(fPosts, "r", encoding="utf-8") as postsFile:
+            return postsFile.readlines()
+
+    def displayPost(postIndex):
+        postsList = readPosts()
+        if 0 <= postIndex < len(postsList):
+            postInfo = postsList[postIndex].strip().split(";")
+
+            postContent = f"Title: {postInfo[3]}\nCategory: {postInfo[2]}\nMessage: {postInfo[4]}\nAuthor: {postInfo[1]}\nDate and Time: {postInfo[6]}"
+            postLabel.config(text=postContent)
+
+            imagePath = postInfo[5]
+            if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                imagePost = Image.open(imagePath)
+                resizedPostIMG = imagePost.resize((300, 160))
+                imgPost = ImageTk.PhotoImage(resizedPostIMG)
+                imageLabel.config(image=imgPost)
+                imageLabel.image = imgPost
+            else:
+                imageLabel.config(image="")
+                imageLabel.image = None
+
+    def likePost():
+        postsList = readPosts()
+        if 0 <= currentPostIndex < len(postsList):
+            postInfo = postsList[currentPostIndex].strip().split(";")
+            post_id = postInfo[0]
+            author = postInfo[1]
+
+            with open(fLikedPosts, "r", encoding="utf-8") as liked_file:
+                liked_posts = liked_file.readlines()
+
+            for liked_post in liked_posts:
+                liked_info = liked_post.strip().split(";")
+                if liked_info[0] == post_id and liked_info[1] == author and liked_info[2] == userName:
+                    messagebox.showinfo("Like Post", "You have already liked this post.")
+                    return
+
+            with open(fLikedPosts, "a", encoding="utf-8") as liked_file:
+                liked_file.write(f"{post_id};{author};{userName}\n")
+
+            messagebox.showinfo("Like Post", "Post liked successfully.")
+
+    def nextPost():
+        nonlocal currentPostIndex
+        currentPostIndex = (currentPostIndex + 1) % len(readPosts())
+        displayPost(currentPostIndex)
+
+    def previousPost():
+        nonlocal currentPostIndex
+        currentPostIndex = (currentPostIndex - 1) % len(readPosts())
+        displayPost(currentPostIndex)
+
+    viewSinglePostPanel = PanedWindow(panelViewPosts, width=730, height=180, bd="3", relief="sunken")
+    viewSinglePostPanel.place(x=10, y=10)
+
+    btnForward = Button(panelViewPosts, text="Next\nPost", width=8, height=2, command=nextPost)
+    btnForward.place(x=670, y=390)
+
+    btnBackward = Button(panelViewPosts, text="Previous\nPost", width=8, height=2, command=previousPost)
+    btnBackward.place(x=600, y=390)
+
+    btnLikePost = Button(panelViewPosts, text="Like\nPost", width=8, height=2, command = likePost)
+    btnLikePost.place(x=530, y=390)
+
+    postLabel = Label(viewSinglePostPanel, text="", font=("Helvetica", 9), wraplength=380, justify="left")
+    postLabel.place(x=10, y=10)
+
+    imageLabel = Label(viewSinglePostPanel)
+    imageLabel.place(x=390, y=10)
+
+    currentPostIndex = 0
+    displayPost(currentPostIndex)
+
 
 def userNotificationsPanel():
     panelUserNotifs = PanedWindow(window, width=750, height=450, relief="sunken")

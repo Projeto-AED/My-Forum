@@ -1,0 +1,8 @@
+0;mario;a
+2;mario;a
+3;miguel;a
+0;mario;mario
+1;mario;mario
+2;mario;mario
+3;miguel;mario
+4;mario;mario
