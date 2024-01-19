@@ -3,8 +3,8 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import ImageTk,Image
 from tkinter import messagebox
-import datetime
 from datetime import datetime, timedelta
+import datetime
 import os
 
 fUsers = "files/users.txt"
@@ -834,17 +834,17 @@ def viewPostsPanel(userName):
             postInfo = post.strip().split(";")
             post_author = postInfo[1]
             post_category = postInfo[2]
-            post_date = datetime.strptime(postInfo[6], "%d-%m-%Y %H:%M")
+            post_date = datetime.datetime.strptime(postInfo[6], "%d-%m-%Y %H:%M")
 
             author_match = not selectedAuthor or selectedAuthor == post_author
             category_match = not selectedCategory or selectedCategory == post_category
             time_match = True
 
             if selectedTimeFilter:
-                filter_date = datetime.now() - timedelta(days=1) if selectedTimeFilter == "< 1 day" else \
-                            datetime.now() - timedelta(weeks=1) if selectedTimeFilter == "< 1 week" else \
-                            datetime.now() - timedelta(weeks=4) if selectedTimeFilter == "< 1 month" else \
-                            datetime.now() - timedelta(weeks=52) if selectedTimeFilter == "< 1 year" else None
+                filter_date = datetime.datetime.now() - timedelta(days=1) if selectedTimeFilter == "< 1 day" else \
+                    datetime.datetime.now() - timedelta(weeks=1) if selectedTimeFilter == "< 1 week" else \
+                    datetime.datetime.now() - timedelta(weeks=4) if selectedTimeFilter == "< 1 month" else \
+                    datetime.datetime.now() - timedelta(weeks=52) if selectedTimeFilter == "< 1 year" else None
 
                 time_match = not filter_date or post_date >= filter_date
 
