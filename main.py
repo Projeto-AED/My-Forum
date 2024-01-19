@@ -3,13 +3,14 @@ from tkinter import ttk
 from tkinter import filedialog
 from PIL import ImageTk,Image
 from tkinter import messagebox
-from tkinter import ttk
+import datetime
 import os
 
 fUsers = "files/users.txt"
-fWaitingUsers = "files\waitingUsers.txt"
-fCategories = "files\categories.txt"
-fNotifications = "files\notifications.txt"
+fWaitingUsers = "files/waitingUsers.txt"
+fCategories = "files/categories.txt"
+fNotifications = "files/notifications.txt"
+fPosts = "files/posts.txt"
 
 window = Tk()
 screenWidth = window.winfo_screenwidth()
@@ -101,7 +102,7 @@ def userDashboard(userName):
     imageNewPost = Image.open("images\\postIMG.png")
     resizedNewPostIMG = imageNewPost.resize((50, 50))
     imgNewPost = ImageTk.PhotoImage(resizedNewPostIMG)
-    btnNewPost = Button(userMenu, image=imgNewPost, width = 230 , height = 50, relief="sunken", compound=LEFT, text="New Post", font="Calibri, 11")
+    btnNewPost = Button(userMenu, image=imgNewPost, width = 230 , height = 50, relief="sunken", compound=LEFT, text="New Post", font="Calibri, 11", command = lambda: newPostPanel(userName))
     btnNewPost.image = imgNewPost
     btnNewPost.place(x=5, y=100)
 
@@ -441,6 +442,212 @@ def notificationSettingsPanel():
 
     readNotificationsToTreeview(treeviewNotifications)
 
+def newPostPanel(userName):
+    userNewPostPanel = PanedWindow(window, width=750, height=450, relief="sunken")
+    userNewPostPanel.place(x=250, y=50)
+
+    inputPostPanel = PanedWindow(userNewPostPanel, width=730, height=280, bd="3", relief="sunken")
+    inputPostPanel.place(x=10, y=10)
+
+    def get_next_post_id():
+        try:
+            with open(fPosts, "r", encoding="utf-8") as posts_file:
+                lines = posts_file.readlines()
+                if lines:
+                    last_post = lines[-1].split(";")
+                    return int(last_post[0]) + 1
+                else:
+                    return 0
+        except FileNotFoundError:
+            return 0
+        
+    selected_file_path = None
+
+    def selectFiles():
+        nonlocal selected_file_path
+        selected_file_path = filedialog.askopenfilename(filetypes=[("PNG files", "*.png")])
+
+    def postButtonClicked():
+        nonlocal selected_file_path
+
+        category = categoryVar.get()
+        title = titleVar.get()
+        message = messageText.get("1.0", "end-1c")
+
+        if not category or not title or not message or not selected_file_path:
+            messagebox.showerror("Error", "All inputs, including the PNG file, must be filled.")
+            return
+
+        post_id = get_next_post_id()
+
+        date_time = datetime.datetime.now().strftime("%d-%m-%Y %H:%M")
+
+        post_data = f"{post_id};{userName};{category};{title};{message};{selected_file_path};{date_time}\n"
+        with open(fPosts, "a", encoding="utf-8") as posts_file:
+            posts_file.write(post_data)
+
+        updateTreeView()
+
+        messagebox.showinfo("Success", "Post successfully created!")
+
+    def updateTreeView():
+        for item in treeviewPosts.get_children():
+            treeviewPosts.delete(item)
+
+        with open(fPosts, "r", encoding="utf-8") as posts_file:
+            for line in posts_file:
+                post_info = line.strip().split(";")
+                if post_info[1] == userName:
+                    treeviewPosts.insert("", "end", values=(post_info[3], post_info[2], post_info[6]))
+
+    def onTreeviewSelect(event):
+        selection = treeviewPosts.selection()
+        if selection:
+            item_values = treeviewPosts.item(selection[0], 'values')
+            selected_title = item_values[0]
+
+            with open(fPosts, "r", encoding="utf-8") as posts_file:
+                for line in posts_file:
+                    post_info = line.strip().split(";")
+                    if post_info[3] == selected_title:
+                        categoryVar.set(post_info[2])
+                        titleVar.set(post_info[3])
+                        messageText.delete(1.0, END)
+                        messageText.insert(END, post_info[4])
+                        nonlocal selected_file_path
+                        selected_file_path = post_info[5]
+                        break
+
+    def removePost():
+        selected_item = treeviewPosts.selection()
+        if not selected_item:
+            messagebox.showinfo("Remove Post", "Please select a post to remove.")
+            return
+
+        selected_values = treeviewPosts.item(selected_item, "values")
+        if not selected_values:
+            messagebox.showinfo("Remove Post", "Unable to retrieve post information.")
+            return
+
+        selected_title = selected_values[0]
+        selected_date_time = selected_values[2]
+
+        with open(fPosts, "r", encoding="utf-8") as posts_file:
+            posts_list = posts_file.readlines()
+
+        with open(fPosts, "w", encoding="utf-8") as posts_file:
+            for line in posts_list:
+                post_info = line.strip().split(";")
+                post_title = post_info[3]
+                post_date_time = post_info[6]
+                if post_title != selected_title or post_date_time != selected_date_time:
+                    posts_file.write(line)
+
+        updateTreeView()
+        clearBoxes()
+        messagebox.showinfo("Remove Post", f"The post with title '{selected_title}' and date_time '{selected_date_time}' has been removed.")
+
+    def clearBoxes():
+        categoryVar.set(categories[0])
+        titleVar.set("")
+        messageText.delete("1.0", END)
+        nonlocal selected_file_path
+        selected_file_path = None
+
+    def editPost():
+        selected_item = treeviewPosts.selection()
+        if not selected_item:
+            messagebox.showinfo("Edit Post", "Please select a post to edit.")
+            return
+
+        selected_values = treeviewPosts.item(selected_item, "values")
+        if not selected_values:
+            messagebox.showinfo("Edit Post", "Unable to retrieve post information.")
+            return
+
+        selected_title = selected_values[0]
+        selected_date_time = selected_values[2]
+
+        with open(fPosts, "r", encoding="utf-8") as posts_file:
+            posts_list = posts_file.readlines()
+
+        with open(fPosts, "w", encoding="utf-8") as posts_file:
+            for line in posts_list:
+                post_info = line.strip().split(";")
+                post_title = post_info[3]
+                post_date_time = post_info[6]
+                if post_title != selected_title or post_date_time != selected_date_time:
+                    posts_file.write(line)
+
+        postButtonClicked()
+        updateTreeView()
+
+        messagebox.showinfo("Edit Post", f"The post with title '{selected_title}' and Date '{selected_date_time}' has been edited successfully.")
+
+    categories = []
+    with open(fCategories, "r", encoding="utf-8") as file:
+        categories = [line.strip() for line in file.readlines()]
+
+    categoryLabel = Label(inputPostPanel, text="Select Category:", font=("Helvetica", 9))
+    categoryLabel.place(x=20, y=20)
+
+    categoryVar = StringVar()
+    categoryCombobox = ttk.Combobox(inputPostPanel, values=categories, textvariable=categoryVar, state="readonly")
+    categoryCombobox.place(x=150, y=20)
+    categoryCombobox.current(0)
+
+    titleLabel = Label(inputPostPanel, text="Title:", font=("Helvetica", 9))
+    titleLabel.place(x=350, y=20)
+
+    titleVar = StringVar()
+    titleEntry = Entry(inputPostPanel, width=40, textvariable=titleVar)
+    titleEntry.place(x=420, y=20)
+
+    messageLabel = Label(inputPostPanel, text="Message:", font=("Helvetica", 9))
+    messageLabel.place(x=20, y=60)
+
+    messageText = Text(inputPostPanel, width=60, height=8)
+    messageText.place(x=150, y=60)
+
+    selectFilesButton = Button(inputPostPanel, text="Select PNG Files", command = selectFiles)
+    selectFilesButton.place(x=150, y=200)
+
+    postButton = Button(inputPostPanel,width=12, height=4, text="Post!", command = postButtonClicked)
+    postButton.place(x=600, y=200)
+
+    editButton = Button(inputPostPanel,width=12, height=4, text="Edit Post", command = editPost)
+    editButton.place(x=500, y=200)
+
+    clearButton = Button(inputPostPanel,width=12, height=4, text="Clear Boxes", command = clearBoxes)
+    clearButton.place(x=400, y=200)
+
+    removeButton = Button(userNewPostPanel,width=12, height=4, text="Delete Post", command = removePost)
+    removeButton.place(x=510, y=330)
+
+    myPostsTviewPanel = PanedWindow(userNewPostPanel, width=730, height=180, bd="3", relief="sunken")
+    myPostsTviewPanel.place(x=10, y=300)
+
+    treeviewPosts = ttk.Treeview(myPostsTviewPanel, columns=("Title", "Category", "date_time"), show="headings", height=5)
+    treeviewPosts.heading("Title", text="Title")
+    treeviewPosts.heading("Category", text="Category")
+    treeviewPosts.heading("date_time", text="Date and Time")
+    treeviewPosts.grid(column=0, row=0, sticky="nsew")
+
+    treeviewPosts.column("Title", width=150)
+    treeviewPosts.column("Category", width=100)
+    treeviewPosts.column("date_time", width=100)
+
+    vsbPosts = ttk.Scrollbar(myPostsTviewPanel, orient="vertical", command=treeviewPosts.yview)
+    treeviewPosts.configure(yscrollcommand=vsbPosts.set)
+    vsbPosts.grid(column=1, row=0, sticky="ns")
+
+    myPostsTviewPanel.columnconfigure(0, weight=1)
+    myPostsTviewPanel.rowconfigure(0, weight=1)
+
+    treeviewPosts.bind("<<TreeviewSelect>>", onTreeviewSelect)
+
+    updateTreeView()
+
 def userNotificationsPanel():
     panelUserNotifs = PanedWindow(window, width=750, height=450, relief="sunken")
     panelUserNotifs.place(x=250, y=50)
@@ -551,6 +758,29 @@ def registerPanel():
     btnSubmit = Button(panelRegister, text="Submit", font="Calibri, 11", width=25, height=3, command=lambda: createAccount(newUser.get(), newPass.get(), rewritePass.get(), panelRegister))
     btnSubmit.place(x=260, y=250)
 
+    def createAccount(userName, userPass, userPassConfirm, panelUsers):
+
+        if userPass != userPassConfirm:
+            messagebox.showerror("Create Account Error", "Your passwords are different!")
+            return  
+        if userName == "" or userPass == "":
+            messagebox.showerror("Create Account Error", "Username and Password can't be blank!")
+            return         
+        fileUsers=open(fUsers, "r", encoding="utf-8")
+        usersList = fileUsers.readlines()
+        fileUsers.close()
+        for line in usersList:
+            fields = line.split(";")
+            if fields[0] == userName:
+                messagebox.showerror("Create Account Error", "Try another username!")
+                return 
+        fileWaitingUsers = open(fWaitingUsers, "a")
+        line = userName + ";" + userPass + "\n"
+        fileWaitingUsers.write(line)
+        fileWaitingUsers.close()
+        messagebox.showinfo("Create Account", "Successful! Wait until an Admin approves your request!")
+        panelUsers.destroy()
+
 # Login Page
 def loginPanel():
     panelUsers = PanedWindow(window, width=750, height=450, relief = "sunken")
@@ -571,51 +801,27 @@ def loginPanel():
     btnLogin = Button(panelUsers, text = "Login", font="Calibri, 11", width=25, height=3, command = lambda: checkUser(userName.get(), userPass.get(), panelUsers))
     btnLogin.place(x=260, y= 200)
 
-# User Authentication Functions (Login and Register):
-def checkUser(userName, userPass, panelUsers):
-    fileUsers=open(fUsers, "r", encoding="utf-8")
-    usersList = fileUsers.readlines()
-    fileUsers.close()
+    # User Authentication Functions (Login and Register):
+    def checkUser(userName, userPass, panelUsers):
+        fileUsers=open(fUsers, "r", encoding="utf-8")
+        usersList = fileUsers.readlines()
+        fileUsers.close()
 
-    if userName == "admin" and userPass == "admin":
-        messagebox.showinfo("Login", "Welcome Admin!")
-        panelUsers.destroy()
-        adminDashboard()
-    else:
-        for line in usersList:
-            if line.strip() == f"{userName};{userPass}":
-                msg = "Welcome " + userName
-                messagebox.showinfo("Login", msg)
-                panelUsers.destroy()
-                # has userName as input because it'll be needed to identify the User throughout posts and such.
-                userDashboard(userName)
-                return msg
-        messagebox.showerror("Login Failed", "Your Username or Password are Incorrect!")
-    return ""
-
-# Working
-def createAccount(userName, userPass, userPassConfirm, panelUsers):
-
-    if userPass != userPassConfirm:
-        messagebox.showerror("Create Account Error", "Your passwords are different!")
-        return  
-    if userName == "" or userPass == "":
-        messagebox.showerror("Create Account Error", "Username and Password can't be blank!")
-        return         
-    fileUsers=open(fUsers, "r", encoding="utf-8")
-    usersList = fileUsers.readlines()
-    fileUsers.close()
-    for line in usersList:
-        fields = line.split(";")
-        if fields[0] == userName:
-            messagebox.showerror("Create Account Error", "Try another username!")
-            return 
-    fileWaitingUsers = open(fWaitingUsers, "a")
-    line = userName + ";" + userPass + "\n"
-    fileWaitingUsers.write(line)
-    fileWaitingUsers.close()
-    messagebox.showinfo("Create Account", "Successful! Wait until an Admin approves your request!")
-    panelUsers.destroy()
+        if userName == "admin" and userPass == "admin":
+            messagebox.showinfo("Login", "Welcome Admin!")
+            panelUsers.destroy()
+            adminDashboard()
+        else:
+            for line in usersList:
+                if line.strip() == f"{userName};{userPass}":
+                    msg = "Welcome " + userName
+                    messagebox.showinfo("Login", msg)
+                    panelUsers.destroy()
+                    # has userName as input because it'll be needed to identify the User throughout posts and such.
+                    userDashboard(userName)
+                    return msg
+            messagebox.showerror("Login Failed", "Your Username or Password are Incorrect!")
+        return ""
 
 #Launch My Forum!
 indexPage()

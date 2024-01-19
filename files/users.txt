@@ -1,7 +1,11 @@
 admin;admin
 mario;mario
+miguel;miguel
 4;4
 teste123;palavrapassesupersecreta
 d;d
 user;user
 aaa;aaa
+a;a
+3;3
+1;1
