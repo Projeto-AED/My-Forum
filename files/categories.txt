@@ -1,5 +1,7 @@
 Jogos
 Golf
 Futebol
-Séries
 Filmes
+Boxe
+Séries
+Música

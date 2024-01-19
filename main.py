@@ -292,10 +292,10 @@ def categorySettingsPanel():
 
     # Buttons
     btnAdd = Button(categoryPanel, text="Add", width=12, height=4, fg="black", command=addCategory)
-    btnAdd.place(x=300, y=304)
+    btnAdd.place(x=300, y=238)
 
     btnRemove = Button(categoryPanel, text="Remove", width=12, height=4, fg="black", command=removeCategory)
-    btnRemove.place(x=423, y=304)
+    btnRemove.place(x=423, y=238)
 
     # Reads the existing categories from the file
     fileCategories = open(fCategories, "r", encoding="utf-8")
@@ -490,7 +490,6 @@ def profileStatsPanel(userName):
         with open(fLikedPosts, "r", encoding="utf-8") as likedFile:
             likedPostsList = [line.strip().split(";") for line in likedFile]
 
-        # Create a dictionary to count occurrences of each post_id
         post_counts = {}
         for post in likedPostsList:
             _, author, liked_user = post
@@ -498,7 +497,6 @@ def profileStatsPanel(userName):
                 post_id = _
                 post_counts[post_id] = post_counts.get(post_id, 0) + 1
 
-        # Find the post_id with the maximum count
         most_liked_post_id = max(post_counts, key=post_counts.get, default=None)
         return most_liked_post_id
 
@@ -1074,10 +1072,10 @@ def likedPostsPanel(userName):
     viewSinglePostPanel = PanedWindow(panelLikedPosts, width=730, height=180, bd="3", relief="sunken")
     viewSinglePostPanel.place(x=10, y=10)
 
-    btnForward = Button(panelLikedPosts, text="Next\nLiked Post", width=12, height=4, command=nextLikedPost)
+    btnForward = Button(panelLikedPosts, text="Load Post/\nNext Post", width=12, height=4, command=nextLikedPost)
     btnForward.place(x=640, y=365)
 
-    btnBackward = Button(panelLikedPosts, text="Previous\nLiked Post", width=12, height=4, command=previousLikedPost)
+    btnBackward = Button(panelLikedPosts, text="Previous\nPost", width=12, height=4, command=previousLikedPost)
     btnBackward.place(x=530, y=365)
 
     btnUnlikePost = Button(panelLikedPosts, text="Unlike\nPost", width=12, height=4, command = unlikePost)

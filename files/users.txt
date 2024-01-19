@@ -1,13 +1,5 @@
 admin;admin
 mario;mario
 miguel;miguel
-4;4
-teste123;palavrapassesupersecreta
-d;d
+rito;rito
 user;user
-aaa;aaa
-a;a
-3;3
-1;1
-user0;user0
-s;s
