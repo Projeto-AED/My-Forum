@@ -98,7 +98,7 @@ def userDashboard(userName):
     imageProfileStats = Image.open("images\\registerIMG.png")
     resizedProfileStatsIMG = imageProfileStats.resize((50, 50))
     imgProfileStats = ImageTk.PhotoImage(resizedProfileStatsIMG)
-    btnProfileStats = Button(userMenu, image=imgProfileStats, width = 230 , height = 50, relief="sunken", compound=LEFT, text = (userName)+"'s Statistics", font="Calibri, 11")
+    btnProfileStats = Button(userMenu, image=imgProfileStats, width = 230 , height = 50, relief="sunken", compound=LEFT, text = (userName)+"'s Statistics", font="Calibri, 11", command = lambda: profileStatsPanel(userName))
     btnProfileStats.image = imgProfileStats
     btnProfileStats.place(x=5, y=20)
 
@@ -444,6 +444,95 @@ def notificationSettingsPanel():
     btnRemoveNotification.place(x=555, y=280)
 
     readNotificationsToTreeview(treeviewNotifications)
+
+def profileStatsPanel(userName):
+    userProfileStatsPanel = PanedWindow(window, width=750, height=450, relief="sunken")
+    userProfileStatsPanel.place(x=250, y=50)
+
+    def countUserPosts(userName):
+        with open(fPosts, "r", encoding="utf-8") as postsFile:
+            return sum(1 for line in postsFile if line.split(";")[1] == userName)
+
+    def countLikesReceived(userName):
+        with open(fLikedPosts, "r", encoding="utf-8") as likedFile:
+            return sum(1 for line in likedFile if line.split(";")[1] == userName)
+
+    def countCommentsMade(userName):
+        with open(fComments, "r", encoding="utf-8") as commentsFile:
+            return sum(1 for line in commentsFile if line.split(";")[1] == userName)
+        
+    def readPosts():
+        with open(fPosts, "r", encoding="utf-8") as postsFile:
+            return postsFile.readlines()
+        
+    def displayPost(postIndex, postsList=None):
+        if postsList is None:
+            postsList = readPosts()
+
+        if 0 <= postIndex < len(postsList):
+            postInfo = postsList[postIndex].strip().split(";")
+
+            postContent = f"Title: {postInfo[3]}\nCategory: {postInfo[2]}\nMessage: {postInfo[4]}\nAuthor: {postInfo[1]}\nDate and Time: {postInfo[6]}"
+            postLabel.config(text=postContent)
+
+            imagePath = postInfo[5]
+            if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                imagePost = Image.open(imagePath)
+                resizedPostIMG = imagePost.resize((320, 170))
+                imgPost = ImageTk.PhotoImage(resizedPostIMG)
+                imageLabel.config(image=imgPost)
+                imageLabel.image = imgPost
+            else:
+                imageLabel.config(image="")
+                imageLabel.image = None
+
+    def getMostLikedPost(userName):
+        with open(fLikedPosts, "r", encoding="utf-8") as likedFile:
+            likedPostsList = [line.strip().split(";") for line in likedFile]
+
+        # Create a dictionary to count occurrences of each post_id
+        post_counts = {}
+        for post in likedPostsList:
+            _, author, liked_user = post
+            if author == userName:
+                post_id = _
+                post_counts[post_id] = post_counts.get(post_id, 0) + 1
+
+        # Find the post_id with the maximum count
+        most_liked_post_id = max(post_counts, key=post_counts.get, default=None)
+        return most_liked_post_id
+
+    def displayMostLikedPost(userName):
+        mostLikedPostId = getMostLikedPost(userName)
+
+        if mostLikedPostId:
+            with open(fPosts, "r", encoding="utf-8") as postsFile:
+                postsList = [line.strip() for line in postsFile]
+                postIndex = next((index for index, post in enumerate(postsList) if post.startswith(mostLikedPostId)), None)
+                displayPost(postIndex, postsList)
+        
+    numPostsLabel = Label(userProfileStatsPanel, text=f"Number of Posts Created: {countUserPosts(userName)}", font=("Helvetica", 12))
+    numPostsLabel.place(x=10, y=10)
+
+    numLikesLabel = Label(userProfileStatsPanel, text=f"Number of Likes Received: {countLikesReceived(userName)}", font=("Helvetica", 12))
+    numLikesLabel.place(x=10, y=50)
+
+    numCommentsLabel = Label(userProfileStatsPanel, text=f"Number of Comments Made: {countCommentsMade(userName)}", font=("Helvetica", 12))
+    numCommentsLabel.place(x=10, y=90)
+
+    viewSinglePostPanel = PanedWindow(userProfileStatsPanel, width=730, height=180, bd="3", relief="sunken")
+    viewSinglePostPanel.place(x=10, y=170)
+
+    postLabel = Label(viewSinglePostPanel, text="", font=("Helvetica", 9), wraplength=380, justify="left")
+    postLabel.place(x=10, y=10)
+
+    imageLabel = Label(viewSinglePostPanel)
+    imageLabel.place(x=390, y=0)
+
+    mostLikedPostLabel = Label(userProfileStatsPanel, text="Your Most Liked Post:", font=("Helvetica", 12))
+    mostLikedPostLabel.place(x=10, y=130)
+
+    displayMostLikedPost(userName)
 
 def newPostPanel(userName):
     userNewPostPanel = PanedWindow(window, width=750, height=450, relief="sunken")
