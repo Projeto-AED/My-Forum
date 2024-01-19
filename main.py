@@ -119,7 +119,7 @@ def userDashboard(userName):
     imageLikedPosts = Image.open("images\\likedPostsIMG.png")
     resizedLikedPostsIMG = imageLikedPosts.resize((50, 50))
     imgLikedPosts = ImageTk.PhotoImage(resizedLikedPostsIMG)
-    btnLikedPosts = Button(userMenu, image=imgLikedPosts, width = 230 , height = 50, relief="sunken", compound=LEFT, text="Liked Posts", font="Calibri, 11")
+    btnLikedPosts = Button(userMenu, image=imgLikedPosts, width = 230 , height = 50, relief="sunken", compound=LEFT, text="Liked Posts", font="Calibri, 11", command = lambda: likedPostsPanel(userName))
     btnLikedPosts.image = imgLikedPosts
     btnLikedPosts.place(x=5, y=260)
 
@@ -888,6 +888,131 @@ def viewPostsPanel(userName):
     currentPostIndex = 0
     displayPost(currentPostIndex)
 
+def likedPostsPanel(userName):
+    panelLikedPosts = PanedWindow(window, width=750, height=450, relief="sunken")
+    panelLikedPosts.place(x=250, y=50)
+
+    def readLikedPosts():
+        with open(fLikedPosts, "r", encoding="utf-8") as likedFile:
+            return likedFile.readlines()
+
+    def readPosts():
+        with open(fPosts, "r", encoding="utf-8") as postsFile:
+            return postsFile.readlines()
+
+    def displayLikedPost(postIndex, likedPostsList=None):
+        if likedPostsList is None:
+            likedPostsList = readLikedPosts()
+
+        if 0 <= postIndex < len(likedPostsList):
+            likedPostInfo = likedPostsList[postIndex].strip().split(";")
+            post_id = likedPostInfo[0]
+
+            postsList = readPosts()
+            postInfo = next((post.strip().split(";") for post in postsList if post.startswith(post_id)), None)
+
+            if postInfo and likedPostInfo[2] == userName:  # Ensure the like is from the specified user
+                postContent = f"Title: {postInfo[3]}\nCategory: {postInfo[2]}\nMessage: {postInfo[4]}\nAuthor: {postInfo[1]}\nDate and Time: {postInfo[6]}"
+                postLabel.config(text=postContent)
+
+                imagePath = postInfo[5]
+                if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
+                    imagePost = Image.open(imagePath)
+                    resizedPostIMG = imagePost.resize((320, 170))
+                    imgPost = ImageTk.PhotoImage(resizedPostIMG)
+                    imageLabel.config(image=imgPost)
+                    imageLabel.image = imgPost
+                else:
+                    imageLabel.config(image="")
+                    imageLabel.image = None
+
+                # Code Regarding Comment Section:
+                for item in commentsTreeview.get_children():
+                    commentsTreeview.delete(item)
+
+                currentDisplayedPostId = postInfo[0]
+
+                with open(fComments, "r", encoding="utf-8") as commentsFile:
+                    for commentLine in commentsFile:
+                        commentInfo = commentLine.strip().split(";")
+                        if commentInfo[0] == currentDisplayedPostId:
+                            commentsTreeview.insert("", "end", values=(commentInfo[1], commentInfo[2]))
+
+    def nextLikedPost():
+        nonlocal currentLikedPostIndex
+        likedPostsList = readLikedPosts()
+
+        while currentLikedPostIndex < len(likedPostsList) - 1:
+            currentLikedPostIndex = (currentLikedPostIndex + 1) % len(likedPostsList)
+            if shouldDisplayLikedPost(likedPostsList[currentLikedPostIndex]):
+                break
+
+        displayLikedPost(currentLikedPostIndex)
+
+    def previousLikedPost():
+        nonlocal currentLikedPostIndex
+        likedPostsList = readLikedPosts()
+
+        while currentLikedPostIndex > 0:
+            currentLikedPostIndex = (currentLikedPostIndex - 1) % len(likedPostsList)
+            if shouldDisplayLikedPost(likedPostsList[currentLikedPostIndex]):
+                break
+
+        displayLikedPost(currentLikedPostIndex)
+
+    def shouldDisplayLikedPost(likedPostInfo):
+        post_id, _, liked_user = likedPostInfo.strip().split(";")
+        postsList = readPosts()
+
+        postInfo = next((post.strip().split(";") for post in postsList if post.startswith(post_id)), None)
+        return postInfo is not None and liked_user == userName
+    
+    def unlikePost():
+        likedPostsList = readLikedPosts()
+
+        if 0 <= currentLikedPostIndex < len(likedPostsList):
+            post_id, author, liked_user = likedPostsList[currentLikedPostIndex].strip().split(";")
+
+            likedPostsList.pop(currentLikedPostIndex)
+
+            with open(fLikedPosts, "w", encoding="utf-8") as likedFile:
+                likedFile.writelines(likedPostsList)
+
+            messagebox.showinfo("Unlike Post", "Post unliked successfully!")
+
+            nextLikedPost()
+
+    viewSinglePostPanel = PanedWindow(panelLikedPosts, width=730, height=180, bd="3", relief="sunken")
+    viewSinglePostPanel.place(x=10, y=10)
+
+    btnForward = Button(panelLikedPosts, text="Next\nLiked Post", width=12, height=4, command=nextLikedPost)
+    btnForward.place(x=640, y=365)
+
+    btnBackward = Button(panelLikedPosts, text="Previous\nLiked Post", width=12, height=4, command=previousLikedPost)
+    btnBackward.place(x=530, y=365)
+
+    btnUnlikePost = Button(panelLikedPosts, text="Unlike\nPost", width=12, height=4, command = unlikePost)
+    btnUnlikePost.place(x=640, y=200)
+
+    postLabel = Label(viewSinglePostPanel, text="", font=("Helvetica", 9), wraplength=380, justify="left")
+    postLabel.place(x=10, y=10)
+
+    imageLabel = Label(viewSinglePostPanel)
+    imageLabel.place(x=390, y=0)
+
+    commentsPostPanel = PanedWindow(panelLikedPosts, width=510, height=240, bd="3", relief="sunken")
+    commentsPostPanel.place(x=10, y=200)
+
+    commentsTreeview = ttk.Treeview(commentsPostPanel, columns=("User", "Comment"), show="headings", height=9)
+    commentsTreeview.heading("User", text="Author")
+    commentsTreeview.heading("Comment", text="Comment")
+    commentsTreeview.place(x=10, y=10)
+
+    commentsTreeview.column("User", width=100)
+    commentsTreeview.column("Comment", width=380)
+
+    currentLikedPostIndex = 0
+    displayLikedPost(currentLikedPostIndex)
 
 def userNotificationsPanel():
     panelUserNotifs = PanedWindow(window, width=750, height=450, relief="sunken")

@@ -13,3 +13,4 @@
 12;a;Jogos;AAAAAAAAA;AAAAAAAAAAAA;D:/TSIW/1º Semestre/AED/My-Forum/images/viewNotifsIMG.png;19-01-2024 17:39
 13;mario;Filmes;BBBBBBBBB;BBBBBBBBBBBBB;D:/TSIW/1º Semestre/AED/My-Forum/images/mainpage_bg.png;19-01-2024 17:39
 14;a;Golf;fafafafafa;fafafafafafa;D:/TSIW/1º Semestre/AED/My-Forum/images/viewPostsIMG.png;19-01-2024 17:41
+15;user0;Futebol;AAAAAAAAAHHHHHHH;HHHHHHHHHHHHHHH;D:/TSIW/1º Semestre/AED/My-Forum/images/mainpage_bg.png;19-01-2024 18:16

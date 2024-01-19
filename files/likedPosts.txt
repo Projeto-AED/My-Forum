@@ -1,10 +1,9 @@
-0;mario;a
-2;mario;a
-3;miguel;a
 0;mario;mario
 1;mario;mario
 2;mario;mario
 3;miguel;mario
 4;mario;mario
 0;mario;user0
-8;a;a
+3;miguel;user0
+4;mario;user0
+1;mario;a
