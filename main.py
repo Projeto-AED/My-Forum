@@ -4,6 +4,7 @@ from tkinter import filedialog
 from PIL import ImageTk,Image
 from tkinter import messagebox
 import datetime
+from datetime import datetime, timedelta
 import os
 
 fUsers = "files/users.txt"
@@ -658,8 +659,10 @@ def viewPostsPanel(userName):
         with open(fPosts, "r", encoding="utf-8") as postsFile:
             return postsFile.readlines()
 
-    def displayPost(postIndex):
-        postsList = readPosts()
+    def displayPost(postIndex, postsList=None):
+        if postsList is None:
+            postsList = readPosts()
+
         if 0 <= postIndex < len(postsList):
             postInfo = postsList[postIndex].strip().split(";")
 
@@ -669,13 +672,25 @@ def viewPostsPanel(userName):
             imagePath = postInfo[5]
             if imagePath.lower().endswith(('.png', '.jpg', '.jpeg', '.gif')):
                 imagePost = Image.open(imagePath)
-                resizedPostIMG = imagePost.resize((300, 160))
+                resizedPostIMG = imagePost.resize((320, 170))
                 imgPost = ImageTk.PhotoImage(resizedPostIMG)
                 imageLabel.config(image=imgPost)
                 imageLabel.image = imgPost
             else:
                 imageLabel.config(image="")
                 imageLabel.image = None
+        
+        # Code Regarding Comment Section:
+        for item in commentsTreeview.get_children():
+            commentsTreeview.delete(item)
+
+        post_id = postInfo[0]
+
+        with open(fComments, "r", encoding="utf-8") as commentsFile:
+            for commentLine in commentsFile:
+                commentInfo = commentLine.strip().split(";")
+                if commentInfo[0] == post_id:
+                    commentsTreeview.insert("", "end", values=(commentInfo[1], commentInfo[2]))
 
     def likePost():
         postsList = readPosts()
@@ -724,7 +739,151 @@ def viewPostsPanel(userName):
     postLabel.place(x=10, y=10)
 
     imageLabel = Label(viewSinglePostPanel)
-    imageLabel.place(x=390, y=10)
+    imageLabel.place(x=390, y=0)
+
+    commentsPostPanel = PanedWindow(panelViewPosts, width=510, height=240, bd="3", relief="sunken")
+    commentsPostPanel.place(x=10, y=200)
+
+    def addComment():
+        comment_text = commentEntry.get("1.0", "end-1c").strip()
+        if not comment_text:
+            messagebox.showinfo("Add Comment", "Please enter a comment.")
+            return
+
+        postsList = readPosts()
+        if 0 <= currentPostIndex < len(postsList):
+            postInfo = postsList[currentPostIndex].strip().split(";")
+            post_id = postInfo[0]
+
+            with open(fComments, "a", encoding="utf-8") as comments_file:
+                comments_file.write(f"{post_id};{userName};{comment_text}\n")
+
+            commentsTreeview.insert("", "end", values=(userName, comment_text))
+
+            messagebox.showinfo("Add Comment", "Comment added successfully.")
+            commentEntry.delete("1.0", END)
+
+    def onCommentSelected(event):
+        selected_item = commentsTreeview.selection()
+        if selected_item:
+            values = commentsTreeview.item(selected_item, 'values')
+            if values:
+                selected_comment = values[1]
+                commentEntry.delete("1.0", END)
+                commentEntry.insert(END, selected_comment)
+
+    def deleteComment():
+        selected_item = commentsTreeview.selection()
+        if selected_item:
+            values = commentsTreeview.item(selected_item, 'values')
+            if values:
+                comment_author = values[0]
+                if comment_author == userName:
+                    commentsTreeview.delete(selected_item)
+
+                    with open(fComments, "r", encoding="utf-8") as comments_file:
+                        lines = comments_file.readlines()
+
+                    with open(fComments, "w", encoding="utf-8") as comments_file:
+                        deleted = False
+                        for line in lines:
+                            commentInfo = line.strip().split(";")
+                            post_id = commentInfo[0]
+                            if post_id == commentInfo[0] and commentInfo[1] == userName and commentInfo[2] == values[1]:
+                                deleted = True
+                                continue
+                            comments_file.write(line)
+
+                        if deleted:
+                            messagebox.showinfo("Delete Comment", "Comment deleted successfully.")
+
+    commentLabel = Label(commentsPostPanel, text="Comment:", font=("Helvetica", 9))
+    commentLabel.place(x=10, y=10)
+
+    commentEntry = Text(commentsPostPanel, width=52, height=3)
+    commentEntry.place(x=80, y=10)
+
+    addCommentButton = Button(commentsPostPanel, text="Add Comment", width=12, height=2, command=addComment)
+    addCommentButton.place(x=400, y=70)
+
+    deleteCommentButton = Button(commentsPostPanel, text="Delete Comment", width=12, height=2, command=deleteComment)
+    deleteCommentButton.place(x=400, y=120)
+
+    commentsTreeview = ttk.Treeview(commentsPostPanel, columns=("User", "Comment"), show="headings", height=6)
+    commentsTreeview.heading("User", text="Author")
+    commentsTreeview.heading("Comment", text="Comment")
+    commentsTreeview.place(x=10, y=70)
+
+    commentsTreeview.column("User", width=100)
+    commentsTreeview.column("Comment", width=280)
+
+    commentsTreeview.bind("<ButtonRelease-1>", onCommentSelected)
+
+    filterPostsPanel = PanedWindow(panelViewPosts, width=220, height=180, bd="3", relief="sunken")
+    filterPostsPanel.place(x=520, y=200)
+
+    def applyFilters():
+        selectedAuthor = authorComboBox.get()
+        selectedCategory = categoryComboBox.get()
+        selectedTimeFilter = timeFilterComboBox.get()
+
+        postsList = readPosts()
+        filteredPosts = []
+
+        for post in postsList:
+            postInfo = post.strip().split(";")
+            post_author = postInfo[1]
+            post_category = postInfo[2]
+            post_date = datetime.strptime(postInfo[6], "%d-%m-%Y %H:%M")
+
+            author_match = not selectedAuthor or selectedAuthor == post_author
+            category_match = not selectedCategory or selectedCategory == post_category
+            time_match = True
+
+            if selectedTimeFilter:
+                filter_date = datetime.now() - timedelta(days=1) if selectedTimeFilter == "< 1 day" else \
+                            datetime.now() - timedelta(weeks=1) if selectedTimeFilter == "< 1 week" else \
+                            datetime.now() - timedelta(weeks=4) if selectedTimeFilter == "< 1 month" else \
+                            datetime.now() - timedelta(weeks=52) if selectedTimeFilter == "< 1 year" else None
+
+                time_match = not filter_date or post_date >= filter_date
+
+            if author_match and category_match and time_match:
+                filteredPosts.append(post)
+
+        if not filteredPosts:
+            messagebox.showinfo("No Posts", "No posts match the selected filters.")
+        else:
+            displayPost(0, filteredPosts)
+
+    def clearSelection():
+        authorComboBox.set("")
+        categoryComboBox.set("")
+        timeFilterComboBox.set("")
+
+
+    authorLabel = Label(filterPostsPanel, text="Post Author:", font=("Helvetica", 9))
+    authorLabel.place(x=10, y=10)
+    postAuthors = set(post[1] for post in [line.strip().split(";") for line in readPosts()])
+    authorComboBox = ttk.Combobox(filterPostsPanel, values=list(postAuthors), state="readonly", width = 15)
+    authorComboBox.place(x=85, y=10)
+
+    categoryLabel = Label(filterPostsPanel, text="Category:", font=("Helvetica", 9))
+    categoryLabel.place(x=10, y=40)
+    categories = set(post[2] for post in [line.strip().split(";") for line in readPosts()])
+    categoryComboBox = ttk.Combobox(filterPostsPanel, values=list(categories), state="readonly", width = 15)
+    categoryComboBox.place(x=85, y=40)
+
+    timeFilterLabel = Label(filterPostsPanel, text="Time Filter:", font=("Helvetica", 9))
+    timeFilterLabel.place(x=10, y=70)
+    timeFilterComboBox = ttk.Combobox(filterPostsPanel, values=["< 1 day", "< 1 week", "< 1 month", "< 1 year"], state="readonly", width = 15)
+    timeFilterComboBox.place(x=85, y=70)
+
+    applyButton = Button(filterPostsPanel, text="Apply", width=12, height=2, command = applyFilters)
+    applyButton.place(x=10, y=115)
+
+    clearSelectionButton = Button(filterPostsPanel, text="Clear Selection", width=12, height=2, command = clearSelection)
+    clearSelectionButton.place(x=110, y=115)
 
     currentPostIndex = 0
     displayPost(currentPostIndex)
@@ -883,7 +1042,6 @@ def loginPanel():
     btnLogin = Button(panelUsers, text = "Login", font="Calibri, 11", width=25, height=3, command = lambda: checkUser(userName.get(), userPass.get(), panelUsers))
     btnLogin.place(x=260, y= 200)
 
-    # User Authentication Functions (Login and Register):
     def checkUser(userName, userPass, panelUsers):
         fileUsers=open(fUsers, "r", encoding="utf-8")
         usersList = fileUsers.readlines()

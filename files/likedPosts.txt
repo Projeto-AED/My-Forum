@@ -6,3 +6,5 @@
 2;mario;mario
 3;miguel;mario
 4;mario;mario
+0;mario;user0
+8;a;a

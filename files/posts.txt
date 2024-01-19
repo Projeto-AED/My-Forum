@@ -5,3 +5,5 @@
 4;mario;Golf;GOOOOOOOOOOLF;GOLGOGOGLGOGLSGSOG;C:/Users/User/Pictures/Screenshots/Captura de ecrã 2023-12-21 232422.png;19-01-2024 01:31
 5;mario;Séries;Skins;GOLGOGOGLGOGLSGSOG;C:/Users/User/Pictures/Screenshots/Captura de ecrã 2024-01-14 231906.png;19-01-2024 01:32
 6;mario;Filmes;Before Sunrise;AFFFFFFFFFFFWWWWWWWWWWWWWWWAFFFFFFFFFFFF;C:/Users/User/Pictures/Screenshots/Captura de ecrã 2024-01-14 231906.png;19-01-2024 01:32
+7;user0;Filmes;New Cars Movie Out RN!;AWWWWWWWOOOOOOOOOOO;D:/TSIW/1º Semestre/AED/My-Forum/images/approveUsersIMG.png;19-01-2024 15:23
+8;a;Jogos;BUUUUUBUBUBUB;BUUUUUUUUUBUBUBUBUB;D:/TSIW/1º Semestre/AED/My-Forum/images/mainpage_bg.png;19-01-2024 16:29
