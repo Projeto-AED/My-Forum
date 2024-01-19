@@ -1,4 +1,4 @@
 Antes de dar launch na aplicação é necessário mudar o path das imagens no ficheiro posts.txt!
 Escolha as imagens presentes em images/postImages para ficar coerente com as mensagens dos Posts.
-A conta mais completa é para ver de modo geral é mario;mario
+A conta mais completa para ver de modo geral é mario;mario
 A conta de admin é admin;admin
